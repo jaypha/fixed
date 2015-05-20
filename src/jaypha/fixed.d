@@ -48,8 +48,8 @@ struct Fixed(uint scale)
 
     //-----------------------------------------------------
 
-    this(long v) { value = v * factor; }
-    this(double v) { value = lround(v * factor); }
+    pure nothrow this(long v) { value = v * factor; }
+    nothrow this(double v) { value = lround(v * factor); }
     this(string v) { value = lround(std.conv.to!double(v) * factor); }
 
     //-----------------------------------------------------
@@ -122,13 +122,13 @@ struct Fixed(uint scale)
     //-----------------------------------------------------
     // Cast and conversion
 
-    T opCast(T : long)()
+    pure nothrow T opCast(T : long)() const
     { return value / factor; }
 
-    T opCast(T : double)()
+    pure nothrow T opCast(T : double)() const
     { return (cast(double)value) / factor; }
 
-    pure nothrow auto conv(uint newScale)()
+    pure nothrow auto conv(uint newScale)() const
     {
       static if (newScale >= scale)
         return Fixed!newScale.make(value * 10^^(newScale-scale));
@@ -136,7 +136,7 @@ struct Fixed(uint scale)
         return Fixed!newScale.make(value / 10^^(scale - newScale));
     }
 
-    @property string asString()
+    pure @property string asString() const
     {
       auto s = std.conv.to!string(value);
       if (value >= factor)
@@ -148,22 +148,22 @@ struct Fixed(uint scale)
     //-----------------------------------------------------
     // Operators for Fixed and Fixed
 
-    pure nothrow Fixed opBinary(string s:"+")(Fixed b)
+    pure nothrow Fixed opBinary(string s:"+")(Fixed b) const
     {
       return make(value+b.value);
     }
 
-    pure nothrow Fixed opBinary(string s:"-")(Fixed b)
+    pure nothrow Fixed opBinary(string s:"-")(Fixed b) const
     {
       return make(value-b.value);
     }
 
-    pure nothrow Fixed opBinary(string s:"*")(Fixed b)
+    pure nothrow Fixed opBinary(string s:"*")(Fixed b) const
     {
       return make(value*b.value/factor);
     }
 
-    pure nothrow Fixed opBinary(string s:"/")(Fixed b)
+    pure nothrow Fixed opBinary(string s:"/")(Fixed b) const
     {
       return make((value*factor)/b.value);
     }
@@ -171,43 +171,43 @@ struct Fixed(uint scale)
     //-----------------------------------------------------
     // Operators for Fixed and long
 
-    pure nothrow Fixed opBinary(string s:"+")(long b)
+    pure nothrow Fixed opBinary(string s:"+")(long b) const
     {
       return make(value + b*factor);
     }
-    pure nothrow Fixed opBinaryRight(string s:"+")(long b)
+    pure nothrow Fixed opBinaryRight(string s:"+")(long b) const
     {
       return make(value + b*factor);
     }
-    pure nothrow Fixed opBinary(string s:"-")(long b)
+    pure nothrow Fixed opBinary(string s:"-")(long b) const
     {
       return make(value + b*factor);
     }
-    pure nothrow Fixed opBinaryRight(string s:"-")(long b)
+    pure nothrow Fixed opBinaryRight(string s:"-")(long b) const
     {
       return make(b*factor - value);
     }
-    pure nothrow Fixed opBinary(string s:"*")(long b)
+    pure nothrow Fixed opBinary(string s:"*")(long b) const
     {
       return make(value*b);
     }
-    pure nothrow Fixed opBinaryRight(string s:"*")(long b)
+    pure nothrow Fixed opBinaryRight(string s:"*")(long b) const
     {
       return make(b*value);
     }
-    pure nothrow Fixed opBinary(string s:"/")(long b)
+    pure nothrow Fixed opBinary(string s:"/")(long b) const
     {
       return make(value/b);
     }
-    pure nothrow Fixed opBinaryRight(string s:"/")(long b)
+    pure nothrow Fixed opBinaryRight(string s:"/")(long b) const
     {
       return make(b/value);
     }
-    pure nothrow Fixed opBinary(string s:"%")(long b)
+    pure nothrow Fixed opBinary(string s:"%")(long b) const
     {
       return make(value%b);
     }
-    pure nothrow Fixed opBinaryRight(string s:"%")(long b)
+    pure nothrow Fixed opBinaryRight(string s:"%")(long b) const
     {
       return make(b%value);
     }
@@ -216,35 +216,35 @@ struct Fixed(uint scale)
     //-----------------------------------------------------
     // Operators for Fixed and double
 
-    nothrow Fixed opBinary(string s:"+")(double b)
+    nothrow Fixed opBinary(string s:"+")(double b) const
     {
       return make(value + lround(b*factor));
     }
-    nothrow Fixed opBinaryRight(string s:"+")(double b)
+    nothrow Fixed opBinaryRight(string s:"+")(double b) const
     {
       return make(value + lround(b*factor));
     }
-    nothrow Fixed opBinary(string s:"-")(double b)
+    nothrow Fixed opBinary(string s:"-")(double b) const
     {
       return make(value - lround(b*factor));
     }
-    nothrow Fixed opBinaryRight(string s:"-")(double b)
+    nothrow Fixed opBinaryRight(string s:"-")(double b) const
     {
       return make(lround(b*factor) - value);
     }
-    nothrow Fixed opBinary(string s:"*")(double b)
+    nothrow Fixed opBinary(string s:"*")(double b) const
     {
       return make(lround(value*b));
     }
-    nothrow Fixed opBinaryRight(string s:"*")(double b)
+    nothrow Fixed opBinaryRight(string s:"*")(double b) const
     {
       return make(lround(b*value));
     }
-    nothrow Fixed opBinary(string s:"/")(double b)
+    nothrow Fixed opBinary(string s:"/")(double b) const
     {
       return make(lround(value/b));
     }
-    nothrow Fixed opBinaryRight(string s:"/")(double b)
+    nothrow Fixed opBinaryRight(string s:"/")(double b) const
     {
       return make(lround(b/value));
     }

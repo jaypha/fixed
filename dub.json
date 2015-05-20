@@ -3,7 +3,7 @@
 	"description": "Fixed point type",
   "copyright": "Copyright 2014, Jaypha",
 	"authors": ["Jason den Dulk"],
-	"license": "BSL-1.0"
+	"license": "BSL-1.0",
   "targetType": "sourceLibrary",
-  "importPaths": [ "src" ],
+  "importPaths": [ "src" ]
 }
