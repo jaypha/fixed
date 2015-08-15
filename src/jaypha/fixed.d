@@ -138,11 +138,14 @@ struct Fixed(uint scale)
 
     pure @property string asString() const
     {
-      auto s = std.conv.to!string(value);
-      if (value >= factor)
-        return std.conv.to!string(value/factor)~"."~format("%0*d",scale,value%factor);
-      else
-        return format("0.%0*d",scale,value);
+      //auto s = std.conv.to!string(value);
+      if (abs(value) >= factor)
+        return format("%s.%0*d",std.conv.to!string(value/factor),scale,abs(value%factor));
+      else 
+      {
+        string sign = value >= 0 ? "" : "-";
+        return format("%s0.%0*d",sign,scale,abs(value));
+      }
     }
 
     //-----------------------------------------------------
