@@ -8,6 +8,7 @@
  * (See http://www.boost.org/LICENSE_1_0.txt)
  *
  * Authors: Jason den Dulk
+ * Contributers: MoodleLadyCow
  */
 
 /*
@@ -96,9 +97,7 @@ struct Fixed(uint scale)
 
     pure nothrow void opAssign(Fixed v) { value = v.value; }
     pure nothrow void opAssign(long v) { value = v * factor; }
-    pure nothrow void opAssign(int v) { value = v * factor; }
     void opAssign(double v) { value = to!long(v * factor); }
-    void opAssign(float v) { value = to!long(v * factor); }
     void opAssign(string v)
     { value = lround(std.conv.to!double(v) * factor); } // TODO do this without FP
 
@@ -128,6 +127,9 @@ struct Fixed(uint scale)
     pure nothrow T opCast(T : double)() const
     { return (cast(double)value) / factor; }
 
+    pure nothrow T opCast(T : bool)() const
+    { return value != 0; }
+
     pure nothrow auto conv(uint newScale)() const
     {
       static if (newScale >= scale)
@@ -138,7 +140,6 @@ struct Fixed(uint scale)
 
     pure @property string asString() const
     {
-      //auto s = std.conv.to!string(value);
       if (abs(value) >= factor)
         return format("%s.%0*d",std.conv.to!string(value/factor),scale,abs(value%factor));
       else 
@@ -184,7 +185,7 @@ struct Fixed(uint scale)
     }
     pure nothrow Fixed opBinary(string s:"-")(long b) const
     {
-      return make(value + b*factor);
+      return make(value - b*factor);
     }
     pure nothrow Fixed opBinaryRight(string s:"-")(long b) const
     {
@@ -204,15 +205,15 @@ struct Fixed(uint scale)
     }
     pure nothrow Fixed opBinaryRight(string s:"/")(long b) const
     {
-      return make(b/value);
+      return make((b*factor*factor)/value);
     }
     pure nothrow Fixed opBinary(string s:"%")(long b) const
     {
-      return make(value%b);
+      return make(value%(b*factor));
     }
     pure nothrow Fixed opBinaryRight(string s:"%")(long b) const
     {
-      return make(b%value);
+      return make((b*factor)%value);
     }
 
 
@@ -249,7 +250,7 @@ struct Fixed(uint scale)
     }
     nothrow Fixed opBinaryRight(string s:"/")(double b) const
     {
-      return make(lround(b/value));
+      return make(lround((b*factor*factor)/value));
     }
 }
 
@@ -265,14 +266,188 @@ unittest
 {
   import std.stdio;
 
+  // Fundamentals
+
+  assert(fix1.factor == 10);
+  assert(fix2.factor == 100);
+  assert(fix3.factor == 1000);
+  assert(fix1.min.value == long.min);
+  assert(fix1.max.value == long.max);
   assert(fix2.min.value == long.min);
   assert(fix2.max.value == long.max);
+  assert(fix3.min.value == long.min);
+  assert(fix3.max.value == long.max);
+
+  // Default
 
   fix2 amount;
   assert(amount.value == 0);
   assert(amount.asString == "0.00");
+
+  // Creation
+
+  fix1 v1 = 14;
+  assert(v1.value == 140);
+  fix2 v2 = -23.45;
+  assert(v2.value == -2345);
+  fix3 v3 = "134";
+  assert(v3.value == 134000);
+  fix3 v4 = "134.5";
+  assert(v4.value == 134500);
+
+  auto v5 = fix1("22");
+  assert(v5.value == 220);
+
+  assert(fix1(62).value == 620);
+  assert(fix2(-30).value == -3000);
+  assert(fix3("120").value == 120000);
+  assert(fix2(24.6).value == 2460);
+  assert(fix2(-27.2).value == -2720);
+  assert(fix2(16.1f).value == 1610);
+  assert(fix2(-87.3f).value == -8730);
+
+  int i1 = 23;
+  v2 = i1;
+  assert(v2.value == 2300);
+
+  i1 = -15;
+  v1 = i1;
+  assert(v1.value == -150);
+
+  long l1 = 435;
+  v2 = l1;
+  assert(v2.value == 43500);
+
+  l1 = -222;
+  v3 = l1;
+  assert(v3.value == -222000);
+
+  // Assignment
+
   amount = 20;
   assert(amount.value == 2000);
+  amount = -30L;
+  assert(amount.value == -3000);
+  amount = 13.6f;
+  assert(amount.value == 1360);
+  amount = 7.3;
+  assert(amount.value == 730);
+  amount = "-30.7";
+  assert(amount.value == -3070);
+
+  // Comparison operators
+
+  amount = 30;
+
+  assert(amount == 30);
+  assert(amount != 22);
+  assert(amount <= 30);
+  assert(amount >= 30);
+  assert(amount > 29);
+  assert(!(amount > 31));
+  assert(amount < 31);
+  assert(!(amount < 29));
+
+  amount = 22.34;
+
+  assert(amount == 22.34);
+  assert(amount != 15.6);
+  assert(amount <= 22.34);
+  assert(amount >= 22.34);
+  assert(amount > 22.33);
+  assert(!(amount > 22.35));
+  assert(amount < 22.35);
+  assert(!(amount < 22.33));
+
+  fix2 another = 22.34;
+  assert(amount == another);
+  assert(amount <= another);
+  assert(amount >= another);
+
+  another = 22.35;
+  assert(amount != another);
+  assert(amount < another);
+  assert(amount <= another);
+  assert(!(amount > another));
+  assert(!(amount >= another));
+  assert(another > amount);
+  assert(another >= amount);
+  assert(!(another < amount));
+  assert(!(another <= amount));
+
+  // Cast and conversion
+
+  amount = 22;
+  long lVal = cast(long)amount;
+  assert(lVal == 22);
+  double dVal = cast(double)amount;
+  assert(dVal == 22.0);
+  assert(amount.asString == "22.00");
+  assert(fix2(0.15).asString == "0.15");
+  assert(fix2(-0.02).asString == "-0.02");
+  assert(fix2(-43.6).asString == "-43.60");
+  bool bVal = cast(bool)amount;
+  assert(bVal == true);
+  assert(amount);
+  assert(!fix2(0));
+
+  auto cv1 = amount.conv!1();
+  assert(cv1.factor == 10);
+  assert(cv1.value == 220);
+  auto cv3 = amount.conv!3();
+  assert(cv3.factor == 1000);
+  assert(cv3.value == 22000);
+
+  // Arithmmetic operators
+
+  fix2 op1, op2;
+
+  op1 = 5.23;
+  op2 = 7.1;
+
+  assert((op1 + op2) == 12.33);
+  assert((op1 - op2) == -1.87);
+  assert((op1 * op2) == 37.13);
+  assert((op1 / op2) == 0.73);
+
+  assert(op1 + 10 == 15.23);
+  assert(op1 - 10 == -4.77);
+  assert(op1 * 10 == 52.3);
+  assert(op1 / 10 == 0.52);
+  assert(op1 % 10 == 5.23);
+
+  assert(10 + op1 == 15.23);
+  assert(10 - op1 == 4.77);
+  assert(10 * op1 == 52.3);
+  assert(10 / op1 == 1.91);
+  assert(10 % op1 == 4.77);
+
+  assert(op1 + 9.8 == 15.03);
+  assert(op1 - 9.8 == -4.57);
+  assert(op1 * 9.8 == 51.25);
+  assert(op1 / 9.8 == 0.53);
+
+  assert(9.8 + op1 == 15.03);
+  assert(9.8 - op1 == 4.57);
+  assert(9.8 * op1 == 51.25);
+
+  assert(9.8 / op1 == 1.87);
+
+  assert(op1 != op2);
+  assert(op1 == fix2(5.23));
+  assert(op2 == fix2("7.1"));
+  assert(op2 != fix2("7.09"));
+  assert(op2 != fix2("7.11"));
+
+  // Increment, decrement
+
+  amount = 20;
+  assert(++amount == 21);
+  assert(amount == 21);
+  assert(--amount == 20);
+  assert(amount == 20);
+  assert(-amount == -20);
+  assert(amount == 20);
 
   amount = amount + 14;
   assert(amount.value == 3400);
@@ -280,12 +455,28 @@ unittest
   amount = 6 + amount;
   assert(amount.value == 4000);
 
+  // Assignment operators.
+
+  amount = 40;
+
   amount += 5;
   assert(amount.value == 4500);
-  assert(amount == 45);
-  assert(amount.asString == "45.00");
-  assert(cast(long)amount == 45);
-  assert(cast(double)amount == 45.0);
+
+  amount -= 6.5;
+  assert(amount.value == 3850);
+
+  another = -4;
+
+  amount += another;
+  assert(amount.value == 3450);
+
+  amount *= 1.5;
+  assert(amount.value == 5175);
+
+  amount /= 12;
+  assert(amount.value == 431);
+
+  // More tests.
 
   amount = 0.05;
   assert(amount.value == 5);
@@ -296,6 +487,7 @@ unittest
 
   amount = 1.05;
   assert(amount.value == 105);
+  assert(amount == 1.05);
   assert(amount.asString == "1.05");
   assert(cast(long)amount == 1);
   assert(cast(double)amount == 1.05);
@@ -303,12 +495,14 @@ unittest
   assert((++amount).value == 205);
   assert(amount.value == 205);
   assert((-amount).value == -205);
+  assert(--amount == 1.05);
+  assert(amount.value == 105);
 
   amount = 50;
   assert(amount.value == 5000);
 
 
-  fix2 another = amount * 2;
+  another = amount * 2;
   assert(another.value == 10000);
   amount *= 3;
   assert(amount.value == 15000);
@@ -332,6 +526,10 @@ unittest
   amount = 30;
   another = 50.2 - amount;
   assert(another.value == 2020);
+  another -= 50;
+
+  assert(another.value == -2980);
+  assert(another == -29.8);
 
   another = amount/1.6;
   assert(another.value == 1875);
@@ -339,34 +537,18 @@ unittest
   another = amount*1.56;
   assert(another.value == 4680);
 
-  another = 30;
-  assert(amount == another);
-  assert(amount <= another);
-  assert(amount >= another);
 
-  amount = 22;
-  another == 22.01;
-  assert(amount < another);
-  assert(amount <= another);
-  assert(!(amount > another));
-  assert(!(amount >= another));
-
-  fix2 rif = "23";
-
-  assert(rif.value == 2300);
-
-  fix2 raf = rif;
-  assert(raf.value == 2300);
-
-  auto raf1 = raf.conv!1();
-  assert(raf1.value == 230);
-
-  auto raf3 = raf.conv!3();
-  assert(raf3.value == 23000);
 
   fix1 a = 3.2;
   fix2 b = 1.15;
 
   assert(a.value == 32);
   assert(b.value == 115);
+
+  assert(fix2(334) / 15 == 22.26);
+  assert(fix2(334) % 10 == 4);
+
+  assert(334 / fix2(15.3) == 21.83);
+  assert(334 % fix2(15.3) == 12.7);
+
 }
