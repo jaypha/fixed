@@ -28,6 +28,7 @@ module jaypha.fixed;
 import std.string;
 import std.math;
 import std.conv;
+import std.traits;
 
 //-----------------------------------------------------------------------------
 struct Fixed(uint scale)
@@ -35,8 +36,8 @@ struct Fixed(uint scale)
 {
   enum factor = 10^^scale;
 
-
   private:
+    enum sc = scale;
     long value;
     static pure nothrow Fixed make(long v) { Fixed fixed; fixed.value = v; return fixed; }
 
@@ -130,17 +131,26 @@ struct Fixed(uint scale)
     pure nothrow T opCast(T : bool)() const
     { return value != 0; }
 
+    // If newScale is less, then the value is rounded.
     pure nothrow auto conv(uint newScale)() const
     {
-      static if (newScale >= scale)
+      static if (newScale == scale)
+        return Fixed!scale.make(value);
+      else static if (newScale > scale)
         return Fixed!newScale.make(value * 10^^(newScale-scale));
       else
-        return Fixed!newScale.make(value / 10^^(scale - newScale));
+      {
+        auto div = 10^^(scale-newScale);
+        auto newValue = value / div;
+        if (value%div >= div/2)
+          ++newValue;
+        return Fixed!newScale.make(newValue);
+      }
     }
 
     pure @property string asString() const
     {
-      if (abs(value) >= factor)
+      if (value == long.min || abs(value) >= factor)
         return format("%s.%0*d",std.conv.to!string(value/factor),scale,abs(value%factor));
       else 
       {
@@ -255,6 +265,16 @@ struct Fixed(uint scale)
 }
 
 //-----------------------------------------------------------------------------
+// T1 and T2 must be instances of Fixed.
+
+pure nothrow auto mult(T1, T2)(T1 op1, T2 op2)
+   if (__traits(isSame,TemplateOf!(T1), Fixed) &&
+       __traits(isSame,TemplateOf!(T2), Fixed))
+{
+  return Fixed!(T1.sc+T2.sc).make(op1.value*op2.value);
+}
+
+//-----------------------------------------------------------------------------
 
 alias Fixed!1 fix1;
 alias Fixed!2 fix2;
@@ -264,7 +284,7 @@ alias Fixed!3 fix3;
 
 unittest
 {
-  import std.stdio;
+  //import std.stdio;
 
   // Fundamentals
 
@@ -386,6 +406,8 @@ unittest
   assert(fix2(0.15).asString == "0.15");
   assert(fix2(-0.02).asString == "-0.02");
   assert(fix2(-43.6).asString == "-43.60");
+  assert(fix2.min.asString == "-92233720368547758.08");
+  assert(fix2.max.asString == "92233720368547758.07");
   bool bVal = cast(bool)amount;
   assert(bVal == true);
   assert(amount);
@@ -397,6 +419,17 @@ unittest
   auto cv3 = amount.conv!3();
   assert(cv3.factor == 1000);
   assert(cv3.value == 22000);
+
+  fix3 amt3 = 3.752;
+  auto amt2 = amt3.conv!2();
+  assert(amt2.factor == 100);
+  assert(amt2.value == 375);
+  auto amt1 = amt3.conv!1();
+  assert(amt1.factor == 10);
+  assert(amt1.value == 38);
+  auto amt0 = amt3.conv!0();
+  assert(amt0.factor == 1);
+  assert(amt0.value == 4);
 
   // Arithmmetic operators
 
@@ -537,8 +570,6 @@ unittest
   another = amount*1.56;
   assert(another.value == 4680);
 
-
-
   fix1 a = 3.2;
   fix2 b = 1.15;
 
@@ -551,4 +582,11 @@ unittest
   assert(334 / fix2(15.3) == 21.83);
   assert(334 % fix2(15.3) == 12.7);
 
+  // mult function
+
+  fix2 _v1 = 1.27;
+  fix2 _v2 = 3.45;
+  auto _v = _v1.mult(_v2);
+  assert(_v.sc == 4);
+  assert(_v.value == 43815);
 }

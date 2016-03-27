@@ -1,7 +1,6 @@
-Fixed
-=====
+# Fixed
 
-Defines a fixed point type.
+Defines a fixed point type for the D language.
 
 A fixed point number is a number with a fixed number of decimal places. The number of decimal places never varies, unlike floating point types, where the number of decimal places varies depending on the value.
 
@@ -15,55 +14,54 @@ Usage
 Import `jaypha.fixed` into your project. Instantiate with the desired scale.
 
 Example:
-```
-auto v = Fixed!2(23); // Creates a value with 2 decimal places.
-```
+
+    auto v = Fixed!2(23); // Creates a value with 2 decimal places.
 
 `Fixed` implements all the arithmetic, comparison and assignment operators, as well as casting to long and double types.
 
-In addition the following methods/proerties are defined
+In addition, the following methods/properties are defined
 
-```
-pure nothrow auto conv(uint newScale)()
-````
+    pure nothrow auto Fixed.conv(uint newScale)()
 
-Converts to a different number of decimal places.
+Converts to a different number of decimal places. If the number of decimal places is reduced, then the value is rounded.
 
-````
-@property string asString()
-````
+    @property string Fixed.asString()
 
 Convert to a string. Includes the full number of decimal places.
 
-```
-Fixed.min;
-Fixed.max;
+    static immutable Fixed.min;
+    static immutable Fixed.max;
 
-```
 Minimum and maximum possible values respectively for the implementation.
-Declared as static immutables.
+
+    pure nothrow auto mult(T1, T2)(T1 op1, T2 op2)
+
+Multiplies two instances of Fixed and gives back a new `Fixed` with a scale sufficient to hold the new value. The scale of the returned value is the sum of the scales of the operands.
+
+Example:
+
+    fix1 op1 = 1.7;
+    fix2 op2 = 24.56;
+    auto r = op1.mult(op2);
+    assert(r == 41.752);
+    assert(r.factor == 1000); // scale of 3
 
 `fix1`, `fix2` and `fix3` are defined as aliases of `Fixed!1`, `Fixed!2` and `Fixed!3` respectively.
 
-Example
-````
-fix3 value = 21.44;
-value += 12;
-assert(value.asString == "33.440");
-````
+Example:
+
+    fix3 value = 21.44;
+    value += 12;
+    assert(value.asString == "33.440");
+
 License
 -------
 
 Distributed under the Boost License.
-
-Contact
--------
-
-jason@jaypha.com.au
 
 Todo
 ----
 
 Perhaps change the string -> fixed algorithm to avoid using floating point. Not sure if it is worth the effort.
 
-I am not certian how modulo is supposed to behave for fixed point. At the moment it returns the remainder after subtracting a whole number of dividors from the divisee. If this is incorrect and anyone knows the real behaviour, please inform me. Thanks.
+I am not certain how modulo is supposed to behave for fixed point. At the moment it returns the remainder after subtracting a whole number of divisors from the divisee. If this is incorrect and anyone knows the real behaviour, please inform me. Thanks.
