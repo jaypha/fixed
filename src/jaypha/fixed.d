@@ -150,6 +150,11 @@ struct Fixed(uint scale)
 
     pure @property string asString() const
     {
+      return toString();
+    }
+
+    pure string toString() const
+    {
       if (value == long.min || abs(value) >= factor)
         return format("%s.%0*d",std.conv.to!string(value/factor),scale,abs(value%factor));
       else 
@@ -158,6 +163,7 @@ struct Fixed(uint scale)
         return format("%s0.%0*d",sign,scale,abs(value));
       }
     }
+
 
     //-----------------------------------------------------
     // Operators for Fixed and Fixed
@@ -302,6 +308,7 @@ unittest
 
   fix2 amount;
   assert(amount.value == 0);
+  assert(amount.toString() == "0.00");
   assert(amount.asString == "0.00");
 
   // Creation
@@ -402,12 +409,12 @@ unittest
   assert(lVal == 22);
   double dVal = cast(double)amount;
   assert(dVal == 22.0);
-  assert(amount.asString == "22.00");
-  assert(fix2(0.15).asString == "0.15");
-  assert(fix2(-0.02).asString == "-0.02");
-  assert(fix2(-43.6).asString == "-43.60");
-  assert(fix2.min.asString == "-92233720368547758.08");
-  assert(fix2.max.asString == "92233720368547758.07");
+  assert(amount.toString() == "22.00");
+  assert(fix2(0.15).toString() == "0.15");
+  assert(fix2(-0.02).toString() == "-0.02");
+  assert(fix2(-43.6).toString() == "-43.60");
+  assert(fix2.min.toString() == "-92233720368547758.08");
+  assert(fix2.max.toString() == "92233720368547758.07");
   bool bVal = cast(bool)amount;
   assert(bVal == true);
   assert(amount);
@@ -514,14 +521,14 @@ unittest
   amount = 0.05;
   assert(amount.value == 5);
   assert(amount == 0.05);
-  assert(amount.asString == "0.05");
+  assert(amount.toString() == "0.05");
   assert(cast(long)amount == 0);
   assert(cast(double)amount == 0.05);
 
   amount = 1.05;
   assert(amount.value == 105);
   assert(amount == 1.05);
-  assert(amount.asString == "1.05");
+  assert(amount.toString() == "1.05");
   assert(cast(long)amount == 1);
   assert(cast(double)amount == 1.05);
 
@@ -551,7 +558,7 @@ unittest
   amount = 295;
   another = 11;
   assert((amount/another).value == 2681);
-  assert((amount/another).asString == "26.81");
+  assert((amount/another).toString() == "26.81");
 
   another = amount + 1.3;
   assert(another.value == 29630);
