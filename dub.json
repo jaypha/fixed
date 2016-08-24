@@ -1,9 +1,9 @@
 {
-	"name": "fixed",
-	"description": "Fixed point type",
-  "copyright": "Copyright 2014, Jaypha",
-	"authors": ["Jason den Dulk"],
-	"license": "BSL-1.0",
+  "name": "fixed",
+  "description": "Fixed point (decimal) type",
+  "copyright": "Copyright 2014-16, Jaypha",
+  "authors": ["Jason den Dulk"],
+  "license": "BSL-1.0",
   "targetType": "sourceLibrary",
   "importPaths": [ "src" ]
 }

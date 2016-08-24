@@ -1,6 +1,6 @@
 # Fixed
 
-Defines a fixed point type for the D language.
+Defines a fixed point (decimal) type for the D language.
 
 A fixed point number is a number with a fixed number of decimal places. The number of decimal places never varies, unlike floating point types, where the number of decimal places varies depending on the value.
 
@@ -8,8 +8,9 @@ Fixed point values are used wherever fractions are needed, but floating point va
 
 Fixed point values are precise (no rounding issues) and are integral in behaviour (division and modulo work the same as they do for integers).
 
-Usage
------
+In this module, Fixed is based on the long type.
+
+## Usage
 
 Import `jaypha.fixed` into your project. Instantiate with the desired scale.
 
@@ -25,7 +26,7 @@ In addition, the following methods/properties are defined
 
 Converts to a different number of decimal places. If the number of decimal places is reduced, then the value is rounded.
 
-    @property string Fixed.asString()
+    pure string Fixed.toString() const
 
 Convert to a string. Includes the full number of decimal places.
 
@@ -42,7 +43,7 @@ Example:
 
     fix1 op1 = 1.7;
     fix2 op2 = 24.56;
-    auto r = op1.mult(op2);
+    auto r = mult(op1,op2);
     assert(r == 41.752);
     assert(r.factor == 1000); // scale of 3
 
@@ -52,7 +53,7 @@ Example:
 
     fix3 value = 21.44;
     value += 12;
-    assert(value.asString == "33.440");
+    assert(value.toString() == "33.440");
 
 License
 -------
