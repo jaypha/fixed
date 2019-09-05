@@ -526,6 +526,20 @@ unittest
   assert(amount.value == 431);
 
   assert(Fixed!2.fromString("2.5") == Fixed!2("2.5"));
+  
+  // The following template is copied from vibe.d sources
+  // Copyright (c) 2012-2018 RejectedSoftware e.K.
+  // which is permited by vibe.d licence (MIT public license, 
+  // see http://vibed.org/about#license)
+  // in order to test the fromString method in the exactway that vibe.d does
+  
+  template isStringSerializable(T)
+  {
+	enum bool isStringSerializable = is(typeof(T.init.toString()) : string) && is(typeof(T.fromString("")) : T);
+  }
+ 
+ alias number= Fixed!2; 
+ static assert(isStringSerializable!number);
 
   // More tests.
 
