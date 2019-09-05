@@ -531,7 +531,7 @@ unittest
   // Copyright (c) 2012-2018 RejectedSoftware e.K.
   // which is permited by vibe.d licence (MIT public license, 
   // see http://vibed.org/about#license)
-  // in order to test the fromString method in the exactway that vibe.d does
+  // in order to test the fromString method in the exact way that vibe.d does
   
   template isStringSerializable(T)
   {
