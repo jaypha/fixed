@@ -8,7 +8,7 @@
  * (See http://www.boost.org/LICENSE_1_0.txt)
  *
  * Authors: Jason den Dulk
- * Contributers: MoodleLadyCow
+ * Contributers: MoodleLadyCow, Pablo De Nápoli
  */
 
 /*
@@ -53,6 +53,15 @@ struct Fixed(uint scale)
     pure nothrow this(long v) { value = v * factor; }
     nothrow this(double v) { value = lround(v * factor); }
     this(string v) { value = lround(std.conv.to!double(v) * factor); }
+
+    //-----------------------------------------------------
+    //  This function was added so that vibe recognize Fixed as
+    // string serializable.
+    // See: http://vibed.org/api/vibe.data.serialization/isStringSerializable
+    //-----------------------------------------------------
+    
+    static Fixed!scale fromString(string v){ return Fixed!scale(v);}
+
 
     //-----------------------------------------------------
     // Unary operators.
@@ -515,6 +524,22 @@ unittest
 
   amount /= 12;
   assert(amount.value == 431);
+
+  assert(Fixed!2.fromString("2.5") == Fixed!2("2.5"));
+  
+  // The following template is copied from vibe.d sources
+  // Copyright (c) 2012-2018 RejectedSoftware e.K.
+  // which is permited by vibe.d licence (MIT public license, 
+  // see http://vibed.org/about#license)
+  // in order to test the fromString method in the exact way that vibe.d does
+  
+  template isStringSerializable(T)
+  {
+	enum bool isStringSerializable = is(typeof(T.init.toString()) : string) && is(typeof(T.fromString("")) : T);
+  }
+ 
+ alias number= Fixed!2; 
+ static assert(isStringSerializable!number);
 
   // More tests.
 
