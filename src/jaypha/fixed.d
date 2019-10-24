@@ -59,21 +59,25 @@ struct Fixed(uint scale)
     //-----------------------------------------------------------------------------
     // integralPart & decimalPart
     
-    nothrow @property long integralPart() const
+    nothrow long integralPart() const
     {
       return value/factor;
     }
-    nothrow @property void integralPart(long newIntegralPart)
+    nothrow long integralPart(long newIntegralPart)
     {
-      value = newIntegralPart * factor + decimalPart;
+      if (newIntegralPart<0)
+        value = newIntegralPart * factor + decimalPart*-1;
+      else
+        value = newIntegralPart * factor + decimalPart;
+      return newIntegralPart;
     }
 
     /++
-    + this returns x - ⌊|x|⌋ * sgn(x), so for instance for -3.14 it will return -14
+    + this returns |x| - ⌊|x|⌋, so it's always positive
     +/
-    nothrow @property long decimalPart() const
+    nothrow long decimalPart() const
     {
-      return value%factor;
+      return abs(value%factor);
     }
     /++
     + sign doesn't matter, for instance those two calls are equivalent:
@@ -82,13 +86,14 @@ struct Fixed(uint scale)
     + 
     + if the argument is too big, it is truncated
     +/
-    @property void decimalPart(long newDecimalPart)
+    nothrow long decimalPart(long newDecimalPart)
     {
       if ((value < 0) != (newDecimalPart < 0))
         newDecimalPart *= -1;
       while (newDecimalPart > factor)
         newDecimalPart /= 10;
       value = integralPart * factor + newDecimalPart;
+      return newDecimalPart;
     }
 
     //-----------------------------------------------------
@@ -202,7 +207,7 @@ struct Fixed(uint scale)
     pure string toString() const
     {
       if (value == long.min || abs(value) >= factor)
-        return format("%s.%0*d",std.conv.to!string(integralPart),scale,abs(decimalPart));
+        return format("%s.%0*d",std.conv.to!string(integralPart),scale,decimalPart);
       else 
       {
         string sign = value >= 0 ? "" : "-";
@@ -667,23 +672,21 @@ unittest
     assert(aa.decimalPart == 45);
     
     aa = -98765.43;
-    
     assert(aa.integralPart == -98765);
-    assert(aa.decimalPart == -43);
+    assert(aa.decimalPart == 43);
+    
     aa.integralPart = 0;
-    assert(aa == fix2(-0.43));
-    
-    
+    assert(aa == fix2(0.43));
     aa.integralPart(aa.integralPart - 1);
     aa.integralPart = aa.integralPart - 1;
     assert(aa.integralPart == -2);
-    
-    assert(aa.decimalPart == -43);
+    assert(aa.decimalPart == 43);
     
     aa.decimalPart = 99;
     assert(aa == fix2(-2.99));
     aa.decimalPart = -98;
     assert(aa == fix2(-2.98));
+    aa.integralPart = 5;
+    assert(aa == fix2(5.98));
   }
-  
 }
