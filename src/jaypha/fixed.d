@@ -54,6 +54,43 @@ struct Fixed(uint scale)
     nothrow this(double v) { value = lround(v * factor); }
     this(string v) { value = lround(std.conv.to!double(v) * factor); }
 
+
+
+    //-----------------------------------------------------------------------------
+    // integralPart & decimalPart
+    
+    nothrow @property long integralPart() const
+    {
+      return value/factor;
+    }
+    nothrow @property void integralPart(long newIntegralPart)
+    {
+      value = newIntegralPart * factor + decimalPart;
+    }
+
+    /++
+    + this returns x - ⌊|x|⌋ * sgn(x), so for instance for -3.14 it will return -14
+    +/
+    nothrow @property long decimalPart() const
+    {
+      return value%factor;
+    }
+    /++
+    + sign doesn't matter, for instance those two calls are equivalent:
+    +  - fix2(-3).decimalPart = -14 // produces -3.14
+    +  - fix2(-3).decimalPart =  14 // same
+    + 
+    + if the argument is too big, it is truncated
+    +/
+    @property void decimalPart(long newDecimalPart)
+    {
+      if ((value < 0) != (newDecimalPart < 0))
+        newDecimalPart *= -1;
+      while (newDecimalPart > factor)
+        newDecimalPart /= 10;
+      value = integralPart * factor + newDecimalPart;
+    }
+
     //-----------------------------------------------------
     //  This function was added so that vibe recognize Fixed as
     // string serializable.
@@ -132,7 +169,7 @@ struct Fixed(uint scale)
     // Cast and conversion
 
     pure nothrow T opCast(T : long)() const
-    { return value / factor; }
+    { return integralPart; }
 
     pure nothrow T opCast(T : double)() const
     { return (cast(double)value) / factor; }
@@ -165,7 +202,7 @@ struct Fixed(uint scale)
     pure string toString() const
     {
       if (value == long.min || abs(value) >= factor)
-        return format("%s.%0*d",std.conv.to!string(value/factor),scale,abs(value%factor));
+        return format("%s.%0*d",std.conv.to!string(integralPart),scale,abs(decimalPart));
       else 
       {
         string sign = value >= 0 ? "" : "-";
@@ -621,4 +658,32 @@ unittest
   auto _v = _v1.mult(_v2);
   assert(_v.sc == 4);
   assert(_v.value == 43815);
+  
+  
+  // integralPart & decimalPart
+  {
+    fix2 aa = 123.45;
+    assert(aa.integralPart == 123);
+    assert(aa.decimalPart == 45);
+    
+    aa = -98765.43;
+    
+    assert(aa.integralPart == -98765);
+    assert(aa.decimalPart == -43);
+    aa.integralPart = 0;
+    assert(aa == fix2(-0.43));
+    
+    
+    aa.integralPart(aa.integralPart - 1);
+    aa.integralPart = aa.integralPart - 1;
+    assert(aa.integralPart == -2);
+    
+    assert(aa.decimalPart == -43);
+    
+    aa.decimalPart = 99;
+    assert(aa == fix2(-2.99));
+    aa.decimalPart = -98;
+    assert(aa == fix2(-2.98));
+  }
+  
 }
