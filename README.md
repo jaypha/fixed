@@ -63,6 +63,4 @@ Distributed under the Boost License.
 Todo
 ----
 
-Perhaps change the string -> fixed algorithm to avoid using floating point. Not sure if it is worth the effort.
-
 I am not certain how modulo is supposed to behave for fixed point. At the moment it returns the remainder after subtracting a whole number of divisors from the divisee. If this is incorrect and anyone knows the real behaviour, please inform me. Thanks.
