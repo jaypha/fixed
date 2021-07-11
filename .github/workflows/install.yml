@@ -1,0 +1,9 @@
+- name: D Compiler Installation
+  # You may pin to the exact commit or the version.
+  # uses: dlang-community/setup-dlang@b4b60d7871c6f77eaf4af5fa1dc6c2c5515a76ca
+  uses: dlang-community/setup-dlang@v1.1.0
+  with:
+    # Compiler version string, for example 'dmd-latest' or 'ldc-1.20.1'
+    compiler: # optional, default is dmd-latest
+    # Token to use when doing Github API request (for ldc-master)
+    gh_token: # optional, default is ${{ github.token }}
