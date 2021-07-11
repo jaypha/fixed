@@ -29,17 +29,42 @@ import std.string;
 import std.math;
 import std.conv;
 import std.traits;
+import std.stdio;
+import std.regex;
+import std.format;
 
 //-----------------------------------------------------------------------------
 struct Fixed(uint scale)
 //-----------------------------------------------------------------------------
 {
   enum factor = 10^^scale;
+  //enum pattern = ctRegex!(format!"^[0-9]+(.[0-9]{1,%s})?$"(scale)); <-- This would be preferred, except it breaks when scale = 0.
+  enum pattern = ctRegex!("^[+,-]?[0-9]+(\\.[0-9]+)?$");
 
   private:
     enum sc = scale;
     long value;
     static pure nothrow Fixed make(long v) { Fixed fixed; fixed.value = v; return fixed; }
+
+    // Converts from a string to a long usable by this class.
+    static long fromString_(string v)
+    {
+      if (matchFirst(v, pattern).empty)
+        throw new Exception(format("Fixed!%s: Input string '%s' is invalid",scale,v));
+
+      auto words = split(v, ".");
+      auto tmp = to!long(words[0]) * factor;
+      if (words.length > 1) {
+        if (words[1].length > scale)
+          throw new Exception(format("Fixed!%s: Input string '%s' is invalid",scale,v));
+        auto fractionPart = to!long(words[1]) * 10^^(scale-words[1].length);
+        if (tmp < 0)
+          tmp -= fractionPart;
+        else
+          tmp += fractionPart;
+      }
+      return tmp;
+    }
 
   public:
 
@@ -52,7 +77,7 @@ struct Fixed(uint scale)
 
     pure nothrow this(long v) { value = v * factor; }
     nothrow this(double v) { value = lround(v * factor); }
-    this(string v) { value = lround(std.conv.to!double(v) * factor); }
+    this(string v) { value = fromString_(v); }
 
     //-----------------------------------------------------
     //  This function was added so that vibe recognize Fixed as
@@ -108,8 +133,7 @@ struct Fixed(uint scale)
     pure nothrow void opAssign(Fixed v) { value = v.value; }
     pure nothrow void opAssign(long v) { value = v * factor; }
     void opAssign(double v) { value = to!long(v * factor); }
-    void opAssign(string v)
-    { value = lround(std.conv.to!double(v) * factor); } // TODO do this without FP
+    void opAssign(string v) { value = fromString_(v); }
 
     //-----------------------------------------------------
     // Operator assignment
@@ -330,9 +354,13 @@ unittest
   assert(v3.value == 134000);
   fix3 v4 = "134.5";
   assert(v4.value == 134500);
+  fix3 v5 = "134.55";
+  assert(v5.value == 134550);
+  fix3 v6 = "134.557";
+  assert(v6.value == 134557);
 
-  auto v5 = fix1("22");
-  assert(v5.value == 220);
+  auto v7 = fix1("22");
+  assert(v7.value == 220);
 
   assert(fix1(62).value == 620);
   assert(fix2(-30).value == -3000);
@@ -370,6 +398,17 @@ unittest
   assert(amount.value == 730);
   amount = "-30.7";
   assert(amount.value == -3070);
+  amount = "200.06";
+  assert(amount.value == 20006);
+
+  try {
+    // Cannot assign a non-number
+    amount = "xyz";
+    // Cannot assign a number with more decimal places than the scale.
+    amount = "-30.787";
+    assert(false);
+  } catch (Exception e) {
+  }
 
   // Comparison operators
 
